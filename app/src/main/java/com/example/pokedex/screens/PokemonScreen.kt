@@ -49,7 +49,7 @@ fun PokemonScreen(
     val isLoading by remember { viewModel.isLoading }
     val loadError by remember { viewModel.loadError }
     Surface(
-        color = Color.White,
+        color = Color(247,116,103),
         modifier = Modifier.fillMaxSize()
     ) {
         Column {
@@ -145,11 +145,14 @@ fun PokemonRow(
                 )
             }
     ) {
-        Column {
+        Column (
+            modifier.background(color = Color(238,249,251))
+        ){
             Row {
                 Surface(
                     modifier.size(120.dp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                    color = Color(249,249,170)
+                    //color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
                 ) {
                     AsyncImage(
                         model = pokemon.imageUrl,

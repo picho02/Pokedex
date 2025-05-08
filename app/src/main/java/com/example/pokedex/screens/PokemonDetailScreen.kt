@@ -1,6 +1,5 @@
 package com.example.pokedex.screens
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,13 +7,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.produceState
@@ -32,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
@@ -62,88 +65,101 @@ fun PokemonDetailScreen(
     val pokemonInfo = produceState<Resource<Pokemon>>(initialValue = Resource.Loading()) {
         value = viewModel.loadPokemonDetail(pokemonName)
     }.value
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = 16.dp)
+
+    Surface(
+        color =  Color(255,189,181), modifier = Modifier.fillMaxSize()
     ) {
-        PokemonDetailTopSection(
-            navController,
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
-                .align(Alignment.Center)
-        )
-        PokemonDetailStateWraper(
-            pokemonInfo = pokemonInfo,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    top = topPadding + pokemonImageSize / 2f,
-                    start = 16.dp,
-                    bottom = 16.dp,
-                    end = 16.dp
-                )
-                .shadow(10.dp, RoundedCornerShape(10.dp))
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color.Green)
-                .padding(16.dp)
-                .align(Alignment.BottomCenter),
-            loadingModifier = Modifier
-                .size(100.dp)
-                .align(Alignment.Center)
-                .padding(
-                    top = topPadding + pokemonImageSize / 2f,
-                    start = 16.dp,
-                    bottom = 16.dp,
-                    end = 16.dp
-                )
-        )
-        Box(
-            contentAlignment = Alignment.TopCenter,
-            modifier = Modifier
-                .fillMaxSize()
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
+            PokemonDetailTopSection(
+                navController
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
+                PokemonDetailStateWraper(
+                    pokemonInfo = pokemonInfo,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .size(400.dp)
+                        .padding(
+                            top = topPadding + pokemonImageSize / 2f,
+                            start = 16.dp,
+                            bottom = 16.dp,
+                            end = 16.dp
+                        )
+                        .shadow(10.dp, RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(color = Color(238,249,251))
+                        .padding(16.dp),
+                    loadingModifier = Modifier
+                        .size(100.dp)
+                        .padding(
+                            top = topPadding + pokemonImageSize / 2f,
+                            start = 16.dp,
+                            bottom = 16.dp,
+                            end = 16.dp
+                        )
+                )
+                Box(
+                    contentAlignment = Alignment.TopCenter,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, bottom = 16.dp)
+                ) {
+                    if (pokemonInfo is Resource.Success) {
+                        pokemonInfo.data?.sprites?.let {
+                            AsyncImage(
+                                model = it.front_default,
+                                contentDescription = pokemonInfo.data.name,
+                                contentScale = ContentScale.FillBounds,
+                                modifier = Modifier
+                                    .size(pokemonImageSize)
+                                    .offset(y = topPadding)
+                                    .padding(horizontal = 20.dp)
+                            )
+                        }
+                    }
+                }
+            }
             if (pokemonInfo is Resource.Success) {
-                pokemonInfo.data?.sprites?.let {
-                    Log.d("url en paquete", "${pokemonInfo.data.sprites}")
-                    AsyncImage(
-                        model = it.front_default,
-                        contentDescription = pokemonInfo.data.name,
-                        contentScale = ContentScale.FillBounds,
-                        modifier = Modifier
-                            .size(pokemonImageSize)
-                            .offset(y = topPadding)
-                    )
+                val formList = viewModel.generateFormsList(pokemonInfo.data!!.sprites)
+                Text(
+                    text = "Forms",
+                    fontSize = 25.sp,
+                    modifier = Modifier
+                        .padding(16.dp)
+                )
+                LazyRow{
+                    items(items = formList) {
+                        PokemonFormsEntry(
+                            entry = it.url, description = it.name
+                        )
+                    }
                 }
             }
         }
     }
+
 }
 
 @Composable
 fun PokemonDetailTopSection(
-    navController: NavController,
-    modifier: Modifier = Modifier
+    navController: NavController
 ) {
-    Box(
-        contentAlignment = Alignment.TopCenter,
-        modifier = modifier
-            .background(Color.White)
-    ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-            contentDescription = null,
-            tint = Color.Blue,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .size(36.dp)
-                .offset(16.dp, 20.dp)
-                .clickable {
-                    navController.popBackStack()
-                }
-        )
-    }
+    Icon(
+        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+        contentDescription = null,
+        tint = Color.Gray,
+        modifier = Modifier
+            .size(36.dp)
+            .offset(16.dp, 20.dp)
+            .clickable {
+                navController.popBackStack()
+            })
 }
 
 @Composable
@@ -155,24 +171,19 @@ fun PokemonDetailStateWraper(
     when (pokemonInfo) {
         is Resource.Success -> {
             PokemonDetailSection(
-                pokemonInfo.data!!,
-                modifier = modifier
-                    .offset(y = (-20).dp)
+                pokemonInfo.data!!, modifier = modifier.offset(y = (-20).dp)
             )
         }
 
         is Resource.Error -> {
             Text(
-                text = pokemonInfo.message!!,
-                color = Color.Red,
-                modifier = modifier
+                text = pokemonInfo.message!!, color = Color.Red, modifier = modifier
             )
         }
 
         is Resource.Loading -> {
             CircularProgressIndicator(
-                color = Color.Red,
-                modifier = loadingModifier
+                color = Color.Blue, modifier = loadingModifier
             )
         }
 
@@ -181,8 +192,7 @@ fun PokemonDetailStateWraper(
 
 @Composable
 fun PokemonDetailSection(
-    pokemonInfo: Pokemon,
-    modifier: Modifier = Modifier
+    pokemonInfo: Pokemon, modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
     Column(
@@ -194,20 +204,20 @@ fun PokemonDetailSection(
     ) {
         Text(
             text = "#${pokemonInfo.id} ${
-                pokemonInfo.name.replaceFirstChar {
-                    if (it.isLowerCase()) it.titlecase(
-                        Locale.ROOT
-                    ) else it.toString()
-                }
-            }",
+            pokemonInfo.name.replaceFirstChar {
+                if (it.isLowerCase()) it.titlecase(
+                    Locale.ROOT
+                ) else it.toString()
+            }
+        }",
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
-            color = Color.Black
+            color = Color.Black,
+            fontSize = 25.sp
         )
         PokemonTypeSection(types = pokemonInfo.types)
         PokemonDetailDataSection(
-            pokemonWeight = pokemonInfo.weight,
-            pokemonHeight = pokemonInfo.height
+            pokemonWeight = pokemonInfo.weight, pokemonHeight = pokemonInfo.height
         )
     }
 }
@@ -217,9 +227,7 @@ fun PokemonTypeSection(
     types: List<Type>
 ) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .padding(16.dp)
+        verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)
     ) {
         for (type in types) {
             Box(
@@ -228,7 +236,7 @@ fun PokemonTypeSection(
                     .weight(1f)
                     .padding(horizontal = 8.dp)
                     .clip(CircleShape)
-                    .background(Color.Yellow)
+                    .background(Color(249,249,170))
                     .height(35.dp)
             ) {
                 Text(
@@ -236,9 +244,7 @@ fun PokemonTypeSection(
                         if (it.isLowerCase()) it.titlecase(
                             Locale.ROOT
                         ) else it.toString()
-                    },
-                    color = Color.Red,
-                    fontSize = 18.sp
+                    }, color = Color.Black, fontSize = 20.sp
                 )
             }
         }
@@ -247,9 +253,7 @@ fun PokemonTypeSection(
 
 @Composable
 fun PokemonDetailDataSection(
-    pokemonWeight: Int,
-    pokemonHeight: Int,
-    sectionHeight: Dp = 80.dp
+    pokemonWeight: Int, pokemonHeight: Int, sectionHeight: Dp = 80.dp
 ) {
     val pokemonWeightInKg = remember {
         round(pokemonWeight * 100f) / 1000f
@@ -258,8 +262,7 @@ fun PokemonDetailDataSection(
         round(pokemonHeight * 100f) / 1000f
     }
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = Modifier.fillMaxWidth()
     ) {
         PokemonDetailDataItem(
             dataValue = pokemonWeightInKg,
@@ -283,10 +286,7 @@ fun PokemonDetailDataSection(
 
 @Composable
 fun PokemonDetailDataItem(
-    dataValue: Float,
-    dataUnit: String,
-    dataIcon: Painter,
-    modifier: Modifier = Modifier
+    dataValue: Float, dataUnit: String, dataIcon: Painter, modifier: Modifier = Modifier
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -300,8 +300,50 @@ fun PokemonDetailDataItem(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "$dataValue$dataUnit",
-            color = MaterialTheme.colorScheme.onSurface
+            text = "$dataValue$dataUnit", color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 20.sp
         )
     }
+}
+
+@Composable
+fun PokemonFormsEntry(
+    entry: String,
+    description: String,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        contentAlignment = Alignment.Center, modifier = modifier
+            //.shadow(5.dp, RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(10.dp))
+            .padding(10.dp)
+            .fillMaxWidth()
+            .height(180.dp)
+            .aspectRatio(1f)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(249,249,170), Color.White
+                    )
+                )
+            )
+    ) {
+        Column {
+            AsyncImage(
+                model = entry,
+                contentDescription = description,
+                modifier = Modifier
+                    .size(120.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
+            Text(
+                text = description,
+                fontSize = 25.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+        }
+    }
+
 }
